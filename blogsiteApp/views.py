@@ -6,6 +6,8 @@ from .models import BlogPost
 from django.contrib.auth.models import User
 from django.http import HttpResponse
 from django.contrib import messages
+from .models import BlogPost
+from .models import Comment
 
 def register(request):
     if request.method == 'POST':
@@ -84,3 +86,31 @@ def delete_post(request, post_id):
         blog.delete()
         return redirect('dashboard')
     return render(request, 'blogsiteApp/delete_post.html', {'blog': blog})
+
+@login_required
+def comment_on_post(request, post_id):
+    post = get_object_or_404(BlogPost, id=post_id)
+    if request.method == 'POST':
+        content = request.POST.get('content')
+        if content:
+            post.comments.create(user=request.user, content=content)
+            return redirect('dashboard')
+
+@login_required
+def comment_delete(request, comment_id):
+    comment = get_object_or_404(Comment, id=comment_id, user=request.user)
+    comment.delete()
+    messages.success(request, "Comment deleted successfully.")
+    return redirect('dashboard')
+@login_required
+def comment_edit(request, comment_id):
+    comment = get_object_or_404(Comment, id=comment_id, user=request.user)
+    if request.method == 'POST':
+        new_content = request.POST.get('new_content')
+        if new_content:
+            comment.content = new_content
+            comment.save()
+            messages.success(request, "Comment updated successfully.")
+        else:
+            messages.error(request, "Content cannot be empty.")
+    return redirect('dashboard')
